@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Download Interceptor",
+  "version": "1.0.0",
+  "description": "Intercepta las descargas y muestra un mensaje personalizado",
+  "permissions": ["downloads", "nativeMessaging"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "index.html"
+  }
+}
