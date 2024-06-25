@@ -1,27 +1,15 @@
-let activePort = null;
+chrome.runtime.onInstalled.addListener(() => {
+  console.log('La extensión está instalada.');
+});
 
-chrome.runtime.onConnect.addListener((port) => {
-  console.assert(port.name === "popup");
-  activePort = port;
+chrome.downloads.onCreated.addListener((downloadItem) => {
+  console.log('Download started:', downloadItem);
+  const filename = downloadItem.filename || downloadItem.referrer;
 
-  port.onMessage.addListener((msg) => {
-    if (msg.type === "READY") {
-      chrome.downloads.onCreated.addListener((downloadItem) => {
-        console.log('Download started:', downloadItem);
-        chrome.downloads.onChanged.addListener(function onChanged(delta) {
-          if (delta.id === downloadItem.id && delta.filename) {
-            console.log('Filename available:', delta.filename.current);
-            if (activePort) {
-              activePort.postMessage({ type: 'DOWNLOAD_STARTED', filename: delta.filename.current });
-            }
-            chrome.downloads.onChanged.removeListener(onChanged);
-          }
-        });
-      });
-    }
-  });
-
-  port.onDisconnect.addListener(() => {
-    activePort = null;
+  // Guardar el nombre del archivo en sessionStorage
+  chrome.storage.session.get(['downloadedFiles'], (result) => {
+    const downloadedFiles = result.downloadedFiles || [];
+    downloadedFiles.push(filename);
+    chrome.storage.session.set({ downloadedFiles });
   });
 });
