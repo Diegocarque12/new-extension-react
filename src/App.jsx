@@ -1,81 +1,87 @@
 import React, { useState, useEffect } from 'react';
 
+const styles = {
+  app: {
+    fontFamily: 'Arial, sans-serif',
+    maxWidth: '600px',
+    margin: '0 auto',
+    padding: '20px',
+    borderRadius: '8px',
+  },
+  header: {
+    color: '#333',
+    borderBottom: '2px solid #007bff',
+    paddingBottom: '10px',
+    marginBottom: '20px',
+  },
+  subHeader: {
+    color: '#555',
+    fontSize: '1.2em',
+    marginBottom: '15px',
+  },
+  list: {
+    listStyleType: 'none',
+    padding: 0,
+  },
+  listItem: {
+    backgroundColor: '#fff',
+    padding: '10px 15px',
+    marginBottom: '10px',
+    borderRadius: '4px',
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    display: 'flex',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  icon: {
+    marginRight: '10px',
+    color: '#007bff',
+    flexShrink: 0,
+  },
+  fileName: {
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    flex: 1,
+  },
+  emptyMessage: {
+    color: '#888',
+    fontStyle: 'italic',
+  },
+};
+
 function App() {
-  const [filenames, setFilenames] = useState([]);
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadedFiles, setDownloadedFiles] = useState([]);
 
   useEffect(() => {
-    // Leer los nombres de los archivos desde sessionStorage
-    chrome.storage.session.get(['downloadedFiles'], (result) => {
-      const downloadedFiles = result.downloadedFiles || [];
-      setFilenames(downloadedFiles);
-      setIsDownloading(downloadedFiles.length > 0);
-    });
+    if (chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['downloadedFiles'], (result) => {
+        setDownloadedFiles(result.downloadedFiles || []);
+      });
 
-    // Escuchar cambios en sessionStorage
-    const handleStorageChange = (changes, areaName) => {
-      if (areaName === 'session' && changes.downloadedFiles) {
-        setFilenames(changes.downloadedFiles.newValue);
-        setIsDownloading(changes.downloadedFiles.newValue.length > 0);
-      }
-    };
-
-    chrome.storage.onChanged.addListener(handleStorageChange);
-
-    return () => {
-      chrome.storage.onChanged.removeListener(handleStorageChange);
-    };
+      chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === 'local' && changes.downloadedFiles) {
+          setDownloadedFiles(changes.downloadedFiles.newValue);
+        }
+      });
+    }
   }, []);
 
-  const styles = {
-    container: {
-      fontFamily: 'Arial, sans-serif',
-      textAlign: 'center',
-      padding: '20px',
-    },
-    header: {
-      fontSize: '24px',
-      color: '#333'
-    },
-    downloadInfo: {
-      backgroundColor: '#fff',
-      padding: '10px',
-      borderRadius: '5px',
-      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-      margin: '20px 0'
-    },
-    button: {
-      padding: '10px 20px',
-      fontSize: '16px',
-      color: '#fff',
-      backgroundColor: '#007bff',
-      border: 'none',
-      borderRadius: '5px',
-      cursor: 'pointer',
-      marginTop: '10px'
-    },
-    buttonCancel: {
-      backgroundColor: '#dc3545'
-    },
-    noDownloads: {
-      color: '#666'
-    }
-  };
-
   return (
-    <div style={styles.container}>
+    <div style={styles.app}>
       <h1 style={styles.header}>Download Interceptor</h1>
-      {isDownloading ? (
-        <div style={styles.downloadInfo}>
-          <p>Descargando:</p>
-          <ul>
-            {filenames.map((filename, index) => (
-              <li key={index}>{filename}</li>
-            ))}
-          </ul>
-        </div>
+      <h2 style={styles.subHeader}>Archivos descargados:</h2>
+      {downloadedFiles.length > 0 ? (
+        <ul style={styles.list}>
+          {downloadedFiles.map((file, index) => (
+            <li key={index} style={styles.listItem}>
+              <span style={styles.icon}>📁</span>
+              <span style={styles.fileName} title={file}>{file}</span>
+            </li>
+          ))}
+        </ul>
       ) : (
-        <p style={styles.noDownloads}>No hay descargas en progreso</p>
+        <p style={styles.emptyMessage}>No hay archivos descargados aún.</p>
       )}
     </div>
   );
